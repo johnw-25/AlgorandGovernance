@@ -5,7 +5,15 @@ import traceback
 
 j = JinjaSql(param_style='pyformat')
 
+'''This file is a container for classes that handle SQLite database functionalities. Currently only supper for a few features:
+-Connecting to existing database
+-Create table in database
+-Insert SINGLE entry into database
+-Checking if entry exists (returns bool)
+-Error handler that should catch most exceptions thrown.'''
 
+
+# SQLParameter is a container for defining parameters in a SQL table.
 class SQLParameter:
     def __init__(self, var_type=None, name=None, constraint='', is_primary=False):
         self.var_type = var_type
@@ -14,6 +22,7 @@ class SQLParameter:
         self.is_primary = is_primary
 
 
+# Object that represents a database that already exists locally.
 class SqliteDatabase:
     def __init__(self):
         self.connection = None
@@ -28,6 +37,7 @@ class SqliteDatabase:
             self.error_handler(er)
 
     def create_table(self, table_name, params: list[SQLParameter]):
+        # Format parameters into an executable SQL command.
         num_params = len(params) - 1
         formatted_parameters = ''
         for param in params:
@@ -49,6 +59,7 @@ class SqliteDatabase:
             self.error_handler(er)
 
     def check_row(self, component, table_name):
+        # Method checks existence of table entry in table_name based on component.
         try:
             self.cursor.execute('SELECT count(*) FROM "{0}" WHERE id = ?'.format(table_name), (component,))
             data = self.cursor.fetchone()[0]
@@ -67,37 +78,28 @@ class SqliteDatabase:
         exc_type, exc_value, exc_tb = sys.exc_info()
         print(traceback.format_exception(exc_type, exc_value, exc_tb))
 
+    def sqlite_insert(self, table, column_headers, row):
+        # programmatically generate sql insert command
+        # isolate column headers and values from row input
+        new_row = list()
+        for i in row:
+            if type(i) is str and not '':
+                new_val = '"' + i + '"'
+            else:
+                new_val = i
+            new_row.append(new_val)
+        cols = ', '.join('{}'.format(col) for col in column_headers)
+        vals = ', '.join('{}'.format(col) for col in new_row)
 
-def connect_discord(db):
-    try:
-        conn = sqlite3.connect(db)
-        print('Connection successful!')
-        return conn
-    except sqlite3.Error as er:
-        SqliteDatabase.error_handler(er)
+        # use cols and vals to generate sql insert string, tailored to specific SQL table. Maybe could change to switch/case
+        insert_command = 'INSERT INTO {0}'.format(table) + '(' + cols + ') ' + 'VALUES(' + vals + ')'
 
+        # commit table insert to database
+        try:
+            self.connection.cursor().execute(insert_command)
+            self.connection.commit()
+            print('SQL Insert successful.')
+            return
+        except sqlite3.Error as er:
+            SqliteDatabase.error_handler(er)
 
-def sqlite_insert(conn, table, column_headers, row):
-    # programmatically generate sql insert command
-    # isolate column headers and values from row input
-    new_row = list()
-    for i in row:
-        if type(i) is str and not '':
-            new_val = '"' + i + '"'
-        else:
-            new_val = i
-        new_row.append(new_val)
-    cols = ', '.join('{}'.format(col) for col in column_headers)
-    vals = ', '.join('{}'.format(col) for col in new_row)
-
-    # use cols and vals to generate sql insert string, tailored to specific SQL table. Maybe could change to switch/case
-    insert_command = 'INSERT INTO {0}'.format(table) + '(' + cols + ') ' + 'VALUES(' + vals + ')'
-
-    # commit table insert to database
-    try:
-        conn.cursor().execute(insert_command)
-        conn.commit()
-        print('SQL Insert successful.')
-        return
-    except sqlite3.Error as er:
-        SqliteDatabase.error_handler(er)

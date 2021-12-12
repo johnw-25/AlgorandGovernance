@@ -235,7 +235,7 @@ while link_handler.navigate_link() is not None:
         is_row = algo_db.check_row(governor.id, table_name='Governors')
         if not is_row:
             row = [governor.id, governor.account, governor.address, governor.committed_algo, governor.is_eligible, governor.not_eligible_reason, governor.registration_datetime, governor.vote_session_count, governor.link_id]
-            SQL.sqlite_insert(algo_db.connection, table='Governors', column_headers=table_headers, row=row)
+            algo_db.sqlite_insert(table='Governors', column_headers=table_headers, row=row)
     link_counter += 1
 
 algo_db.connection.close()
