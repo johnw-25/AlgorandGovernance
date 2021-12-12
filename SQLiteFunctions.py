@@ -91,11 +91,11 @@ def sqlite_insert(conn, table, column_headers, row):
     vals = ', '.join('{}'.format(col) for col in new_row)
 
     # use cols and vals to generate sql insert string, tailored to specific SQL table. Maybe could change to switch/case
-    sql = 'INSERT INTO {0} VALUES (?)'.format(table, vals)
+    insert_command = 'INSERT INTO {0}'.format(table) + '(' + cols + ') ' + 'VALUES(' + vals + ')'
 
     # commit table insert to database
     try:
-        conn.cursor().execute(sql, row)
+        conn.cursor().execute(insert_command)
         conn.commit()
         print('SQL Insert successful.')
         return

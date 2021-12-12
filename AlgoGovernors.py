@@ -229,7 +229,7 @@ while link_handler.navigate_link() is not None:
     link_data = link_handler.parse_link_request()
     next_link = link_handler.get_next_link(link_data)
     governors = LinkHandler.get_link_data(text=link_data)
-    list_of_links.insert(link=next_link, governors=governors)
+    #list_of_links.insert(link=next_link, governors=governors)
     for governor in governors:
         governor.link_id = link_counter
         is_row = algo_db.check_row(governor.id, table_name='Governors')
@@ -238,6 +238,6 @@ while link_handler.navigate_link() is not None:
             SQL.sqlite_insert(algo_db.connection, table='Governors', column_headers=table_headers, row=row)
     link_counter += 1
 
-
+algo_db.connection.close()
 
 print(list_of_links)
