@@ -79,6 +79,14 @@ class SqliteDatabase:
         except sqlite3.Error as er:
             self.error_handler(er)
 
+    def fetch_all(self, table_name):
+        # This method extracts every row from table, table_name, in connected database. Return is a list of tuples
+        if self.connection and self.cursor:
+            command = 'SELECT * FROM ' + table_name
+            self.cursor.execute(command)
+            result = self.cursor.fetchall()
+            return result
+
     @staticmethod
     def error_handler(er):
         print('SQLite error: %s' % (' '.join(er.args)))
