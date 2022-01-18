@@ -58,7 +58,7 @@ class SqliteDatabase:
                 variable += ', '
             formatted_parameters += variable
 
-        command = 'CREATE TABLE IF NOT EXISTS ' + table_name + '(' + formatted_parameters + ' );'
+        command = 'CREATE TABLE IF NOT EXISTS {0} (?);'.format(table_name), (formatted_parameters,)
 
         try:
             self.cursor.execute(command)
@@ -67,15 +67,15 @@ class SqliteDatabase:
         except sqlite3.Error as er:
             self.error_handler(er)
 
-    def check_row(self, component, table_name):
+    def check_row(self, component, table_name, col_name=None):
         # Method checks existence of table entry in table_name based on component.
+        command = 'SELECT EXISTS(SELECT 1 FROM {0} WHERE {1}="{2}");'.format(table_name, col_name, component)
         try:
-            self.cursor.execute('SELECT count(*) FROM {0} WHERE id = ?'.format(table_name), (component,))
-            data = self.cursor.fetchone()[0]
-            if data == 0:
-                return False
-            else:
+            self.cursor.execute(command)
+            if self.cursor.fetchone()[0]:
                 return True
+            else:
+                return False
         except sqlite3.Error as er:
             self.error_handler(er)
 
@@ -86,6 +86,15 @@ class SqliteDatabase:
             self.cursor.execute(command)
             result = self.cursor.fetchall()
             return result
+
+    def update_table(self, table_name=None, column=None, val=None, comparator_name=None, comparator=None):
+        if not column:
+            return
+        try:
+            self.cursor.execute(r'UPDATE {0} SET ("{1}"={2}) WHERE {3}={4}'.format(table_name, column, val, comparator_name, comparator))
+        except sqlite3.Error as er:
+            self.error_handler(er)
+
 
     @staticmethod
     def error_handler(er):
@@ -105,10 +114,10 @@ class SqliteDatabase:
             else:
                 new_val = i
             new_row.append(new_val)
-        vals = ', '.join('{}'.format(col) for col in new_row)
 
         # use cols and vals to generate sql insert string, tailored to specific SQL table. Maybe could change to switch/case
-        insert_command = 'INSERT INTO {0} VALUES('.format(table) + num_vals + ');'
+        #insert_command = 'INSERT INTO {0} VALUES('.format(table) + num_vals + ');'
+        insert_command = 'INSERT INTO {0} VALUES({1});'.format(table, num_vals)
 
         # commit table insert to database
         try:
